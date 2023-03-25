@@ -2,14 +2,14 @@
 __author__ = "C418____11 <553515788@qq.com>"
 __version__ = "0.0.1"
 
-from collections import abc
+from abc import ABC
 import functools
 from javascript import require
 
 mineflayer = require("mineflayer", "latest")
 
 
-class Plugin(abc):
+class Plugin(ABC):
 
     def reloader(self): ...
 
@@ -61,6 +61,7 @@ class Bot:
     def reconnect(self):  # 重置机器人
         self.bot = mineflayer.createBot(self.init_arg)
         self._re_load_on()
+        self._re_load_plugin()
 
 
 def On(bot: Bot, event):  # On装饰器重写
