@@ -1,36 +1,40 @@
 # -*- coding: utf-8 -*-
 __author__ = "C418____11 <553515788@qq.com>"
-__version__ = "0.0.1"
 
-from mineflayer.mineflayer import Bot, Plugin
+from mineflayer.mineflayer import ABCBot, Plugin
 from javascript import require
 
 auto_eat = require('mineflayer-auto-eat', "latest")
 
 
 class AutoEat(Plugin):
-    def __init__(self, bot: Bot, options: dict):
-        self.bot = bot
-        self.bot.load_plugin(auto_eat, self)
+
+    raw = auto_eat
+
+    def __init__(self, options: dict):
+        self._bot = None
 
         self.autoEat_options = options
-        self.reloader()
 
-    def set_options(self, options: dict):
-        self.autoEat_options = options
-        self.reloader()
-
-    def reloader(self, bot: Bot = None):
+    def reloader(self, bot: ABCBot):
+        self._bot = bot
         bot.autoEat = self  # 从外部为类添加属性
-        self.bot = bot  # 重置储存的bot
-        if bot is not None:
-            self.bot.bot.autoEat.options = self.autoEat_options  # 重新加载属性
+        bot.bot.autoEat.options = self.autoEat_options  # 重新加载属性
 
     def enable(self):  # 启用插件
-        self.bot.bot.autoEat.enable()
+        self._bot.bot.autoEat.enable()
 
     def disable(self):  # 禁用插件
-        self.bot.bot.autoEat.disable()
+        self._bot.bot.autoEat.disable()
+
+    def __eq_options__(self, other: ABCBot):
+        return self._bot.bot.autoEat.options == other.bot.autoEat.options
+
+    def __eq__(self, other):
+        return id(auto_eat) == id(other)
+
+    def __hash__(self):
+        return id(auto_eat)
 
 
 def main():
