@@ -1,5 +1,9 @@
 # Mineflayer-encapsulated-in-Python
 
+mineflayer made by https://github.com/PrismarineJS/mineflayer
+
+免责声明: 若有侵权, 联系删除
+
 用python封装的mineflayer
 
     import sys
