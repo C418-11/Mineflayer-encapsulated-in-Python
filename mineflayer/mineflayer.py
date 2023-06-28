@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = "C418____11 <553515788@qq.com>"
 
+import weakref
 from abc import ABC
 import functools
 
@@ -22,6 +23,10 @@ class ABCBot(ABC):
     def quit(self, reason=''):
         return self.bot["quit"](reason)  # quit方法重写
 
+    @property
+    def username(self):
+        return self.bot["username"]
+
 
 class Plugin(ABC):
     raw: javascript.proxy.Proxy
@@ -34,8 +39,13 @@ class Plugin(ABC):
 
     def disable(self) -> None: ...
 
+    def __hash__(self) -> int: ...
+
+    def __eq__(self, other) -> bool: ...
+
 
 class Bot(ABCBot):
+    bot_dict = weakref.WeakValueDictionary()
 
     def __init__(self, init_arg: dict):
         super().__init__(init_arg)
@@ -43,35 +53,51 @@ class Bot(ABCBot):
         self.ons = set()  # 在机器人重置时需重新加载On
         self.plugins = set()  # 需加载的插件库
 
+    def reg_bot(self):
+        cls = type(self)
+        if self.username is None:
+            raise AttributeError("self.username mustn't be None")
+        cls.bot_dict[self.username] = self
+
     def on(self, event, fn):  # on外部钩子重写
-        self.bot.on(event, fn)
+        wrapper_fn = functools.partial(self.on_wrapper, fn)
+        self.bot.on(event, wrapper_fn)
 
-    def load_plugin(self, plugin: Plugin):  # 加载插件重写
-        self.bot.loadPlugin(plugin.raw)  # 加载插件
+    def get_plugin(self, plugin: Plugin) -> Plugin:
+        return (self.plugins & {plugin}).pop()
 
-        if plugin in self.plugins:
-            if not plugin.__eq_options__((self.plugins & {plugin}).pop()):
+    def load_plugin(self, plugin: Plugin) -> None:  # 加载插件重写
+        self.bot.loadPlugin(plugin.raw["plugin"])  # 加载插件
+
+        try:
+            if self.get_plugin(plugin).__eq_options__(self):
                 raise KeyError(f"The plugin <{plugin.raw}> already exists")
+        except KeyError:
+            pass
 
         self.plugins.add(plugin)
 
         plugin.reloader(self)
 
-    def _re_load_on(self):  # 在机器人重置时重新加载on钩子
+    def _re_load_on(self) -> None:  # 在机器人重置时重新加载on钩子
         for event, func in self.ons:
             self.on(event, func)
 
-    def _re_load_plugin(self):  # 在机器人重置时重新加载插件
+    def _re_load_plugin(self) -> None:  # 在机器人重置时重新加载插件
         for plugin in self.plugins:
             self.load_plugin(plugin)
 
-    def reconnect(self):  # 重置机器人
+    def reconnect(self) -> None:  # 重置机器人
         self.bot = mineflayer.createBot(self.init_arg)
         self._re_load_on()
         self._re_load_plugin()
 
+    def on_wrapper(self, fn, *args, **kwargs):
+        fn(self, *args[1:], **kwargs)
+
 
 def On(bot: Bot, event):  # On装饰器重写
+
     def decorator(_fn):
         bot.on(event, _fn)
         bot.ons.add((event, _fn))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __author__ = "C418____11 <553515788@qq.com>"
-__version__ = "0.0.2"
+__version__ = "0.0.4"
 version = __version__.split('.')
 
 import sys

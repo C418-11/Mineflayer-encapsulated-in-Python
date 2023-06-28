@@ -4,7 +4,7 @@ __author__ = "C418____11 <553515788@qq.com>"
 from mineflayer.mineflayer import ABCBot, Plugin
 from javascript import require
 
-auto_eat = require('mineflayer-auto-eat', "latest")
+auto_eat = require('mineflayer-auto-eat')
 
 
 class AutoEat(Plugin):
